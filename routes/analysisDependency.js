@@ -8,9 +8,9 @@ router.get('/', function(req, res, next) {
   console.log("doTst:"+doTest);
   res.send('respond with a resource');
 });
-router.post('/sendDependencyTree', function(req, res, next) {
+router.post('/sendDependencyTree',  async(req, res, next)=> {
   let {data} = req.body;
-  let doTest = dependencyParser.ParseAndSave2DB(data);
+ await dependencyParser.ParseAndSave2DB(data);
   res.send('respond with a resource');
 })
 ;router.get('/getDependencyTree', function(req, res, next) {
@@ -19,8 +19,9 @@ dependencyParser.getAllDependence(function (err, result) {
     result.forEach((item , index ) => {
        item.subDependence =JSON.parse(item.subDependence) //数据库存的json  转成 实体 ;
    });
-    let result2 = JSON.stringify(result)
-    res.send(result2);
+    let response = {"data":result};
+    let result2 = JSON.stringify(response)
+    res.send(response);
   });
 
 });
