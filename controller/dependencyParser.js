@@ -60,11 +60,12 @@ function parseData(dependenceContent){
 
 
 module.exports.ParseAndSave2DB= function ParseAndSave2DB(rawStringContent){
-
-
     let dependenceNode = parseData(rawStringContent);
     analysisDependenceNodeAndSave2DB(dependenceNode)
+}
 
+module.exports.getAllDependence = function getDependence(callback){
+    dependenceDB.find().lean().exec(callback);
 }
 
 /**
