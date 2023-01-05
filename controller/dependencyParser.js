@@ -53,7 +53,8 @@ function compareWithDB(allDependence, itemBean) {
                     subDependence: JSON.stringify(itemBean.subNodeList),
                     moduleName: itemBean.moduleName,
                     tag: [],
-                    mark: ""
+                    mark: "",
+                    latestVersion: ""
                 };
                 let dependenceBean = new dependenceDB(currentAppInfo)
                 dependenceBean.save(function (err, data) {
@@ -192,7 +193,8 @@ function saveNodeInDB(itemBean) {
             subDependence: JSON.stringify(itemBean.subNodeList),
             moduleName: itemBean.moduleName,
             tag: [],
-            mark: ""
+            mark: "",
+            latestVersion: ""
         };
         let dependenceBean = new dependenceDB(currentAppInfo)
         dependenceBean.save(function (err, data) {

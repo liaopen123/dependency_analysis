@@ -6,6 +6,7 @@ const dependenceSchema = new Schema({
     dependenceName : String,
     subDependence : String,
     moduleName:String,
+    latestVersion:String,
     tag:Array,
     mark:String,
     rating:{
