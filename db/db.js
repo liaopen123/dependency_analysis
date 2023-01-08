@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
 
-var url = 'mongodb://127.0.0.1:27017/hhz_android_dependence';
+var url = 'mongodb://172.16.9.11:27017/hhz_android_dependence';
 
 
 mongoose.connect(url);
