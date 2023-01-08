@@ -4,12 +4,12 @@ module.exports = {
     //新增依赖
     pushVersionAdd: (originalArtifact) => {
         const title = "# 新添加依赖 \n"
-        const content ="## "+ originalArtifact.name
+        const content ="## "+ originalArtifact.dependenceName
         pushMessage(title, content)
     },
     pushCodeModify: (originalArtifact, ModifyArtifact) => {
       let {dependence,version} =   dependenceUtils.getGroupIdAndArtifactId(originalArtifact.dependenceName);
-      let {newVersion} =   dependenceUtils.getGroupIdAndArtifactId(ModifyArtifact.name);
+      let {newVersion} =   dependenceUtils.getGroupIdAndArtifactId(ModifyArtifact.dependenceName);
         const title = "# 依赖发生变动 \n"
         const content ="## "+ dependence + "\n 版本发生修改:\n > " + version + "---->" + newVersion
         pushMessage(title, content)

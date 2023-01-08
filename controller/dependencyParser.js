@@ -3,7 +3,7 @@ const dependenceDB = require('../db/dependence');
 const tagDB = require('../db/tags');
 const pushService = require('../controller/pushService')
 
-const rootDependence = {"name": "app", "level": -1, "subNodeList": [], "moduleName": "app"};
+const rootDependence = {"dependenceName": "app", "level": -1, "subNodeList": [], "moduleName": "app"};
 const MODULE_PREFIX = "project :";
 
 /**
@@ -37,22 +37,22 @@ function generateDependenceBean(realDependence) {
 function compareWithDB(allDependence, itemBean) {
     if (itemBean.moduleName.trim().length !== 0) {
         //先精细化匹配
-        let dependenceEntity = allDependence.find(item => item.dependenceName === itemBean.name)
+        let dependenceEntity = allDependence.find(item => item.dependenceName === itemBean.dependenceName)
         if (dependenceEntity == null) {
-            let {dependence} = generateDependenceBean(itemBean.name)
+            let {dependence} = generateDependenceBean(itemBean.dependenceName)
             let dependenceEntity1 = allDependence.find(item => item.dependenceName.indexOf(dependence) != -1)
             if (dependenceEntity1 != null) {
                 //版本号 发生变化
                 allDependence.splice(allDependence.indexOf(dependenceEntity1), 1)  //移除掉
                 //修改数据库
                 pushService.pushCodeModify(dependenceEntity1,itemBean)
-                dependenceDB.updateOne({"_id": dependenceEntity1._id}, {"dependenceName": itemBean.name}).then(result => console.log(result));
+                dependenceDB.updateOne({"_id": dependenceEntity1._id}, {"dependenceName": itemBean.dependenceName}).then(result => console.log(result));
                 console.log("更新:" + JSON.stringify(itemBean));
             } else {
                 // 新增
                 pushService.pushVersionAdd(itemBean)
                 const currentAppInfo = {
-                    dependenceName: itemBean.name,
+                    dependenceName: itemBean.dependenceName,
                     subDependence: JSON.stringify(itemBean.subNodeList),
                     moduleName: itemBean.moduleName,
                     tag: [],
@@ -104,7 +104,7 @@ async function getDifferent(dependenceNode) {
 function bsDiff(allDependence, dependenceNode) {
     if (dependenceNode.subNodeList != null && dependenceNode.subNodeList.length > 0) {
         dependenceNode.subNodeList.forEach((item, index) => {
-            if (!item.name.startsWith("project :")) { //过滤掉  project的依赖
+            if (!item.dependenceName.startsWith("project :")) { //过滤掉  project的依赖
                 compareWithDB(allDependence, item)
             }
             if (item.subNodeList != null && item.subNodeList.length > 0) {
@@ -115,7 +115,7 @@ function bsDiff(allDependence, dependenceNode) {
 }
 
 /**
- *把接收到的dependencyTree 转换成 层级结构： {"name":"app","level":-1,"subNodeList":[],"moduleName":"app"};
+ *把接收到的dependencyTree 转换成 层级结构： {"dependenceName":"app","level":-1,"subNodeList":[],"moduleName":"app"};
  * @param dependenceContent  字符串 的 dependencyTree
  */
 function parseData(dependenceContent) {
@@ -131,9 +131,9 @@ function parseData(dependenceContent) {
             var moduleName = "";
 
             if (nodeLevel == 0) {
-                moduleName = rootDependence.name;
+                moduleName = rootDependence.dependenceName;
                 rootDependence.subNodeList.push({
-                    "name": formatLineInfo(line),
+                    "dependenceName": formatLineInfo(line),
                     "level": nodeLevel,
                     "subNodeList": [],
                     "moduleName": moduleName
@@ -143,18 +143,18 @@ function parseData(dependenceContent) {
                 if (fatherNode != null) {
                     if (!isModuleWithLine(line)) {
                         //如果是lib  看父类 是不是 moudle
-                        if (isModuleWithLine(fatherNode.name)) {
-                            moduleName = fatherNode.name.replace(MODULE_PREFIX, "");
+                        if (isModuleWithLine(fatherNode.dependenceName)) {
+                            moduleName = fatherNode.dependenceName.replace(MODULE_PREFIX, "");
                         } else {
                             moduleName = ""  //lib的子lib
                         }
 
                     } else {
                         //如果是module   module的father一定是 module 不可能是 lib 所以:
-                        moduleName = fatherNode.name.replace(MODULE_PREFIX, "");
+                        moduleName = fatherNode.dependenceName.replace(MODULE_PREFIX, "");
                     }
                     fatherNode.subNodeList.push({
-                        "name": formatLineInfo(line),
+                        "dependenceName": formatLineInfo(line),
                         "level": nodeLevel,
                         "subNodeList": [],
                         "moduleName": moduleName
@@ -233,7 +233,7 @@ module.exports.addTag = function addTag(tag,callback) {
 function saveNodeInDB(itemBean) {
     if (itemBean.moduleName.trim().length != 0) {
         const currentAppInfo = {
-            dependenceName: itemBean.name,
+            dependenceName: itemBean.dependenceName,
             subDependence: JSON.stringify(itemBean.subNodeList),
             moduleName: itemBean.moduleName,
             tag: [],
@@ -263,7 +263,7 @@ function saveNodeInDB(itemBean) {
 function analysisDependenceNodeAndSave2DB(dependenceNode) {
     if (dependenceNode.subNodeList != null && dependenceNode.subNodeList.length > 0) {
         dependenceNode.subNodeList.forEach((item, index) => {
-            if (!item.name.startsWith("project :")) { //过滤掉  project的依赖
+            if (!item.dependenceName.startsWith("project :")) { //过滤掉  project的依赖
                 saveNodeInDB(item)
                 pushService.pushVersionAdd(item)
             }

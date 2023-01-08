@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var analysisDependencyRouter = require('./routes/analysisDependency');
+const schedule = require('./controller/versionInfoschedule');
 require('./db/db')
 var app = express();
 
@@ -54,5 +55,6 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
-
+//定时轮训 获取最新版本
+schedule.scheduleCron();//定时任务
 module.exports = app;

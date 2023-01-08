@@ -25,7 +25,7 @@ module.exports = {
                     if (app.data!=null&&app.data.children!=null&&app.data.children[0].children.length>0&&app.data.children[0].children[0].children.length>0&&app.data.children[0].children[0].children[0].children.length>0){
                         let version = app.data.children[0].children[0].children[0].children[0].children[app.data.children[0].children[0].children[0].children[0].children.length-1].version;   //sonartype 最后的版本最大
                         let artifactDependence =  info.dependenceName;
-                        let artifactInfo = await artifactDB.findOne({dependenceName: artifactDependence});
+                        let artifactInfo = await artifactDB.findOne({dependenceName: artifactDependence}).lean();
                         if (artifactInfo.latestVersion!==version) {
                             //数据库的最新版本 和 maven的最新斑斑
                             //走机器人推送 本地版本发生了变化
@@ -71,7 +71,7 @@ module.exports = {
                 if (app.object!=null&&app.object.length>0){
                     let data = app.object[0];
                    let artifactDependence =  info.dependenceName;
-                    let artifactInfo = await artifactDB.findOne({dependenceName: artifactDependence});
+                    let artifactInfo = await artifactDB.findOne({dependenceName: artifactDependence}).lean();
                     if (artifactInfo.latestVersion!==data.version) {
                         //数据库的最新版本 和 maven的最新斑斑
                         console.log("，发布新的版本号了")
@@ -121,7 +121,7 @@ module.exports = {
                     if (app.tags!=null&&app.tags.length>0){
                         let tagName = app.tags[0].tag_name;
                         let artifactDependence =  info.dependenceName;
-                        let artifactInfo = await artifactDB.findOne({dependenceName: artifactDependence});
+                        let artifactInfo = await artifactDB.findOne({dependenceName: artifactDependence}).lean();
                         if (artifactInfo.latestVersion!==tagName) {
                             //数据库的最新版本 和 maven的最新斑斑
                             //走机器人推送 本地版本发生了变化
