@@ -7,6 +7,7 @@ const dependenceSchema = new Schema({
     subDependence : String,
     moduleName:String,
     latestVersion:String,
+    latestVersionUrl:String,   //仓库地址            方便定位仓库信息                                                                                                                                                                                                               version  version
     tag:Array,
     mark:String,
     rating:{

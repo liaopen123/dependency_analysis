@@ -1,24 +1,27 @@
 const request = require('request');
+const dependenceUtils = require('../utils/dependenceUtils');
 module.exports = {
     //新增依赖
     pushVersionAdd: (originalArtifact) => {
         const title = "# 新添加依赖 \n"
-        const content ="## "+ originalArtifact.dependence + ":" + originalArtifact.version
+        const content ="## "+ originalArtifact.name
         pushMessage(title, content)
     },
     pushCodeModify: (originalArtifact, ModifyArtifact) => {
+      let {dependence,version} =   dependenceUtils.getGroupIdAndArtifactId(originalArtifact.dependenceName);
+      let {newVersion} =   dependenceUtils.getGroupIdAndArtifactId(ModifyArtifact.name);
         const title = "# 依赖发生变动 \n"
-        const content ="## "+ originalArtifact.dependence + "\n 版本发生修改:\n > " + originalArtifact.version + "---->" + ModifyArtifact.version
+        const content ="## "+ dependence + "\n 版本发生修改:\n > " + version + "---->" + newVersion
         pushMessage(title, content)
     },
     pushVersionDeleted: (originalArtifact) => {
         const title = "# 依赖被删除 \n"
-        const content ="## "+ originalArtifact.dependence + ":" + originalArtifact.version
+        const content ="## "+ originalArtifact.dependenceName
         pushMessage(title, content)
     },
     pushNewVersion: (artifact) => {
-        const title = "# 发现新版本 \n"
-        const content ="## "+ artifact.dependence + "\n 发现新版本,最新的版本号为 > " + artifact.latestVersion;
+        const title = "# 依赖发现新版本 \n"
+        const content ="## "+ artifact.dependenceName + "\n 发现新版本,最新的版本号为 > " + artifact.latestVersion;
         pushMessage(title, content)
     },
 
@@ -52,7 +55,7 @@ function pushMessage(title, content) {
     //     }
     // }
     request.post(//发送post
-        "https://oapi.dingtalk.com/robot/send?access_token=e844deb710edeb0b453074d021006aa03dd167c7698ccd7c15e84c3802c013fe",
+        "https://oapi.dingtalk.com/robot/send?access_token=88202a51f4dbe77c2394a12f20bbe7f6ddeaa194f233f23dc08778174e525e79",
         {
             json: data,
             encoding: "utf-8",

@@ -1,5 +1,6 @@
 const stream = require('stream');
 const dependenceDB = require('../db/dependence');
+const tagDB = require('../db/tags');
 const pushService = require('../controller/pushService')
 
 const rootDependence = {"name": "app", "level": -1, "subNodeList": [], "moduleName": "app"};
@@ -44,17 +45,20 @@ function compareWithDB(allDependence, itemBean) {
                 //版本号 发生变化
                 allDependence.splice(allDependence.indexOf(dependenceEntity1), 1)  //移除掉
                 //修改数据库
+                pushService.pushCodeModify(dependenceEntity1,itemBean)
                 dependenceDB.updateOne({"_id": dependenceEntity1._id}, {"dependenceName": itemBean.name}).then(result => console.log(result));
                 console.log("更新:" + JSON.stringify(itemBean));
             } else {
                 // 新增
+                pushService.pushVersionAdd(itemBean)
                 const currentAppInfo = {
                     dependenceName: itemBean.name,
                     subDependence: JSON.stringify(itemBean.subNodeList),
                     moduleName: itemBean.moduleName,
                     tag: [],
                     mark: "",
-                    latestVersion: ""
+                    latestVersion: "",
+                    latestVersionUrl: ""
                 };
                 let dependenceBean = new dependenceDB(currentAppInfo)
                 dependenceBean.save(function (err, data) {
@@ -86,6 +90,7 @@ async function getDifferent(dependenceNode) {
         //有删除掉的
         console.log("有删除掉的：" + JSON.stringify(allDependence));
         allDependence.forEach((item, index) => {
+            pushService.pushVersionDeleted(item)
             dependenceDB.findOneAndDelete({'_id': item._id}).then(result => console.log("删除成功"));
         })
     }
@@ -167,6 +172,26 @@ function parseData(dependenceContent) {
 }
 
 
+module.exports.modifyTag = async function modifyTag(dependence,tags) {
+    dependenceDB.updateOne({dependenceName: dependence}, {tag: tags}, function (err, raw) {
+        if (err) {
+            console.log(err);
+        }else{
+            console.log(raw);
+        }
+    });
+}
+
+module.exports.saveRemark = async function saveRemark(dependence,remark,rating) {
+    dependenceDB.updateOne({dependenceName: dependence}, {mark: remark, rating: rating}, function (err, raw) {
+        if (err) {
+            console.log(err);
+        }else{
+            console.log(raw);
+        }
+    });
+}
+
 module.exports.ParseAndSave2DB = async function ParseAndSave2DB(rawStringContent) {
     let dependenceNode = parseData(rawStringContent);
     if (isFirstTime2SaveInfo()) {
@@ -174,12 +199,31 @@ module.exports.ParseAndSave2DB = async function ParseAndSave2DB(rawStringContent
     } else {
         await getDifferent(dependenceNode)
     }
+}
+
+
+module.exports.saveRating =  function saveRating(dependence,rating) {
+    dependenceDB.updateOne({dependenceName: dependence}, {rating: rating}, function (err, raw) {
+        if (err) {
+            console.log(err);
+        }else{
+            console.log(raw);
+        }
+        //{ n: 1, nModified: 1, ok: 1 }
+    });
 
 
 }
 
 module.exports.getAllDependence = function getDependence(callback) {
     dependenceDB.find().lean().exec(callback);
+}
+module.exports.getAllTag = function getAllTag(callback) {
+    tagDB.find().lean().exec(callback);
+}
+module.exports.addTag = function addTag(tag,callback) {
+    let mTags = new tagDB({tag:tag});
+    mTags.save(callback);
 }
 
 /**
@@ -194,7 +238,8 @@ function saveNodeInDB(itemBean) {
             moduleName: itemBean.moduleName,
             tag: [],
             mark: "",
-            latestVersion: ""
+            latestVersion: "",
+            latestVersionUrl: ""
         };
         let dependenceBean = new dependenceDB(currentAppInfo)
         dependenceBean.save(function (err, data) {
@@ -220,6 +265,7 @@ function analysisDependenceNodeAndSave2DB(dependenceNode) {
         dependenceNode.subNodeList.forEach((item, index) => {
             if (!item.name.startsWith("project :")) { //过滤掉  project的依赖
                 saveNodeInDB(item)
+                pushService.pushVersionAdd(item)
             }
             if (item.subNodeList != null && item.subNodeList.length > 0) {
                 analysisDependenceNodeAndSave2DB(item);
