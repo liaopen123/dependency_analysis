@@ -21,7 +21,7 @@ module.exports = {
     },
     pushNewVersion: (artifact) => {
         const title = "# 依赖发现新版本 \n"
-        const content ="## "+ artifact.dependenceName + "\n 发现新版本,最新的版本号为 > " + artifact.latestVersion;
+        const content ="## "+ artifact.dependenceName + "\n 发现新版本,最新的版本号为: " + artifact.latestVersion;
         pushMessage(title, content)
     },
 
