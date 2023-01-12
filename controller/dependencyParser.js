@@ -3,7 +3,7 @@ const dependenceDB = require('../db/dependence');
 const tagDB = require('../db/tags');
 const pushService = require('../controller/pushService')
 
-const rootDependence = {"dependenceName": "app", "level": -1, "subNodeList": [], "moduleName": "app"};
+const rootDependence = {"dependenceName": "app", "level": -1, "subNodeList": [], "moduleName": "app", "isInUse": true};
 const MODULE_PREFIX = "project :";
 
 /**
@@ -37,7 +37,7 @@ function generateDependenceBean(realDependence) {
 function compareWithDB(allDependence, itemBean) {
     if (itemBean.moduleName.trim().length !== 0) {
         //先精细化匹配
-        let dependenceEntity = allDependence.find(item => item.dependenceName === itemBean.dependenceName)
+        let dependenceEntity = allDependence.find(item => (item.dependenceName === itemBean.dependenceName)&&(item.moduleName===itemBean.moduleName))
         if (dependenceEntity == null) {
             let {dependence} = generateDependenceBean(itemBean.dependenceName)
             let dependenceEntity1 = allDependence.find(item => item.dependenceName.indexOf(dependence) != -1)
@@ -58,7 +58,8 @@ function compareWithDB(allDependence, itemBean) {
                     tag: [],
                     mark: "",
                     latestVersion: "",
-                    latestVersionUrl: ""
+                    latestVersionUrl: "",
+                    isInUse: true
                 };
                 let dependenceBean = new dependenceDB(currentAppInfo)
                 dependenceBean.save(function (err, data) {
@@ -84,14 +85,15 @@ function compareWithDB(allDependence, itemBean) {
 let allDependence = null;
 
 async function getDifferent(dependenceNode) {
-    allDependence = await dependenceDB.find().lean();
+    allDependence = await dependenceDB.find({"isInUse": true}).lean();
     bsDiff(allDependence, dependenceNode)
     if (allDependence.length > 0) {
         //有删除掉的
         console.log("有删除掉的：" + JSON.stringify(allDependence));
         allDependence.forEach((item, index) => {
             pushService.pushVersionDeleted(item)
-            dependenceDB.findOneAndDelete({'_id': item._id}).then(result => console.log("删除成功"));
+            // dependenceDB.findOneAndDelete({'_id': item._id}).then(result => console.log("删除成功"));
+            dependenceDB.updateOne({"_id": item._id}, {"isInUse": false}).then(result => console.log(result));
         })
     }
 }
@@ -183,7 +185,7 @@ module.exports.modifyTag = async function modifyTag(dependence,tags) {
 }
 
 module.exports.saveRemark = async function saveRemark(dependence,remark,rating) {
-    dependenceDB.updateOne({dependenceName: dependence}, {mark: remark, rating: rating}, function (err, raw) {
+    dependenceDB.update({dependenceName: dependence}, {mark: remark, rating: rating}, function (err, raw) {
         if (err) {
             console.log(err);
         }else{
@@ -216,7 +218,7 @@ module.exports.saveRating =  function saveRating(dependence,rating) {
 }
 
 module.exports.getAllDependence = function getDependence(callback) {
-    dependenceDB.find().lean().exec(callback);
+    dependenceDB.find({isInUse:true}).lean().exec(callback);
 }
 module.exports.getAllTag = function getAllTag(callback) {
     tagDB.find().lean().exec(callback);
@@ -231,7 +233,7 @@ module.exports.addTag = function addTag(tag,callback) {
  * @param itemBean
  */
 function saveNodeInDB(itemBean) {
-    if (itemBean.moduleName.trim().length != 0) {
+    if (itemBean.moduleName.trim().length !== 0) {
         const currentAppInfo = {
             dependenceName: itemBean.dependenceName,
             subDependence: JSON.stringify(itemBean.subNodeList),
@@ -239,7 +241,8 @@ function saveNodeInDB(itemBean) {
             tag: [],
             mark: "",
             latestVersion: "",
-            latestVersionUrl: ""
+            latestVersionUrl: "",
+            isInUse:true,
         };
         let dependenceBean = new dependenceDB(currentAppInfo)
         dependenceBean.save(function (err, data) {
@@ -273,22 +276,6 @@ function analysisDependenceNodeAndSave2DB(dependenceNode) {
         })
     }
 
-
-}
-
-
-module.exports.getFlatDependenceLibWithBean = function getFlatDependenceLibWithBean(dependenceBean) {
-    return "";
-
-}
-
-/**
- *
- * @param dependenceContent  原始的
- */
-module.exports.getFlatDependenceLibWithRawString = function getFlatDependenceLibWithRawString(dependenceContent) {
-    let RawDataBean = doTest(dependenceContent);
-    let flatDependenceLibWithBean = getFlatDependenceLibWithBean(RawDataBean);
 
 }
 
