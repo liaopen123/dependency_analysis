@@ -8,10 +8,11 @@ module.exports = {
         pushMessage(title, content)
     },
     pushCodeModify: (originalArtifact, ModifyArtifact) => {
-      let {dependence,version} =   dependenceUtils.getGroupIdAndArtifactId(originalArtifact.dependenceName);
-      let {newVersion} =   dependenceUtils.getGroupIdAndArtifactId(ModifyArtifact.dependenceName);
+      let dependence =   dependenceUtils.getGroupIdAndArtifactId(originalArtifact.dependenceName);
+      let oldVersion = dependence.version;
+      let {version} =   dependenceUtils.getGroupIdAndArtifactId(ModifyArtifact.dependenceName);
         const title = "# 依赖发生变动 \n"
-        const content ="## "+ dependence + "\n 版本发生修改:\n > " + version + "---->" + newVersion+"\n  ######  [控制台](http://172.16.9.11:8092) \n"
+        const content ="## "+ dependence + "\n 版本发生修改:\n > " + oldVersion + "---->" + version+"\n  ######  [控制台](http://172.16.9.11:8092) \n"
         pushMessage(title, content)
     },
     pushVersionDeleted: (originalArtifact) => {
