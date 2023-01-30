@@ -12,7 +12,7 @@ module.exports = {
       let oldVersion = dependence.version;
       let {version} =   dependenceUtils.getGroupIdAndArtifactId(ModifyArtifact.dependenceName);
         const title = "# 依赖发生变动 \n"
-        const content ="## "+ dependence + "\n 版本发生修改:\n > " + oldVersion + "---->" + version+"\n  ######  [控制台](http://172.16.9.11:8092) \n"
+        const content ="## "+ dependence.dependence + "\n 版本发生修改:\n > " + oldVersion + "---->" + version+"\n  ######  [控制台](http://172.16.9.11:8092) \n"
         pushMessage(title, content)
     },
     pushVersionDeleted: (originalArtifact) => {
