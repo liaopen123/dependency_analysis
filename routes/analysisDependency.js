@@ -75,4 +75,11 @@ router.post('/saveRating', async (req, res, next) => {
     res.send({code: 200, message: "success"});
 })
 
+router.get('/treeMap', function(req, res, next) {
+    res.type('html');
+    let data =  global.treeDataJson
+    console.log("data"+data);
+    res.render('index', { data: data});
+});
+
 module.exports = router;

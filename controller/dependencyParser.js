@@ -37,7 +37,7 @@ function generateDependenceBean(realDependence) {
 function compareWithDB(allDependence, itemBean) {
     if (itemBean.moduleName.trim().length !== 0) {
         //先精细化匹配
-        let dependenceEntity = allDependence.find(item => (item.dependenceName === itemBean.dependenceName)&&(item.moduleName===itemBean.moduleName))
+        let dependenceEntity = allDependence.find(item => (item.dependenceName === itemBean.dependenceName) && (item.moduleName === itemBean.moduleName))
         if (dependenceEntity == null) {
             let {dependence} = generateDependenceBean(itemBean.dependenceName)
             let dependenceEntity1 = allDependence.find(item => item.dependenceName.indexOf(dependence) != -1)
@@ -45,7 +45,7 @@ function compareWithDB(allDependence, itemBean) {
                 //版本号 发生变化
                 allDependence.splice(allDependence.indexOf(dependenceEntity1), 1)  //移除掉
                 //修改数据库
-                pushService.pushCodeModify(dependenceEntity1,itemBean)
+                pushService.pushCodeModify(dependenceEntity1, itemBean)
                 dependenceDB.updateOne({"_id": dependenceEntity1._id}, {"dependenceName": itemBean.dependenceName}).then(result => console.log(result));
                 console.log("更新:" + JSON.stringify(itemBean));
             } else {
@@ -144,7 +144,7 @@ function parseData(dependenceContent) {
                 let fatherNode = findLastParentNode(nodeLevel - 1)
                 if (fatherNode != null) {
                     if (!isModuleWithLine(line)) {
-                        //如果是lib  看父类 是不是 moudle
+                        //如果是lib  看父类 是不是 module
                         if (isModuleWithLine(fatherNode.dependenceName)) {
                             moduleName = fatherNode.dependenceName.replace(MODULE_PREFIX, "");
                         } else {
@@ -174,28 +174,64 @@ function parseData(dependenceContent) {
 }
 
 
-module.exports.modifyTag = async function modifyTag(dependence,tags) {
+module.exports.modifyTag = async function modifyTag(dependence, tags) {
     dependenceDB.updateOne({dependenceName: dependence}, {tag: tags}, function (err, raw) {
         if (err) {
             console.log(err);
-        }else{
+        } else {
             console.log(raw);
         }
     });
 }
 
-module.exports.saveRemark = async function saveRemark(dependence,remark,rating) {
+module.exports.saveRemark = async function saveRemark(dependence, remark, rating) {
     dependenceDB.update({dependenceName: dependence}, {mark: remark, rating: rating}, function (err, raw) {
         if (err) {
             console.log(err);
-        }else{
+        } else {
             console.log(raw);
         }
     });
+}
+
+/**
+ * 把解析好的依赖bean转换成 echart需要是数据结构。
+ * https://echarts.apache.org/examples/zh/editor.html?c=tree-basic
+ * @param rootDependence
+ */
+function analysisTreeData(rootDependence) {
+    function forLoopDependence(fatherNode, children) {
+        children.forEach((item) => {
+            //如果是lib fatherNode直接添加，如果是module的话，则继续迭代
+            if (item.dependenceName.startsWith("project :")) {
+                let newItem;
+                if (item.subNodeList!=null&&item.subNodeList.length>0) {
+                    newItem = {"name":item.dependenceName,"children":[]};
+                    forLoopDependence(newItem,item.subNodeList)
+                }else{
+                    newItem = {"name":item.dependenceName};
+                }
+
+                fatherNode.children.push(newItem)
+            } else {
+                fatherNode.children.push({"name": item.dependenceName})
+            }
+
+        });
+    }
+
+    let {dependenceName, subNodeList} = rootDependence
+    let rootTreeList = {"name": dependenceName, "children": []}
+    forLoopDependence(rootTreeList, subNodeList)
+    console.log(rootTreeList);
+    let treeDataJson = JSON.stringify(rootTreeList);
+    global.treeDataJson = treeDataJson;
+
 }
 
 module.exports.ParseAndSave2DB = async function ParseAndSave2DB(rawStringContent) {
     let dependenceNode = parseData(rawStringContent);
+    analysisTreeData(dependenceNode)
     if (isFirstTime2SaveInfo()) {
         analysisDependenceNodeAndSave2DB(dependenceNode)
     } else {
@@ -204,11 +240,11 @@ module.exports.ParseAndSave2DB = async function ParseAndSave2DB(rawStringContent
 }
 
 
-module.exports.saveRating =  function saveRating(dependence,rating) {
+module.exports.saveRating = function saveRating(dependence, rating) {
     dependenceDB.updateOne({dependenceName: dependence}, {rating: rating}, function (err, raw) {
         if (err) {
             console.log(err);
-        }else{
+        } else {
             console.log(raw);
         }
         //{ n: 1, nModified: 1, ok: 1 }
@@ -218,13 +254,13 @@ module.exports.saveRating =  function saveRating(dependence,rating) {
 }
 
 module.exports.getAllDependence = function getDependence(callback) {
-    dependenceDB.find({isInUse:true}).lean().exec(callback);
+    dependenceDB.find({isInUse: true}).lean().exec(callback);
 }
 module.exports.getAllTag = function getAllTag(callback) {
     tagDB.find().lean().exec(callback);
 }
-module.exports.addTag = function addTag(tag,callback) {
-    let mTags = new tagDB({tag:tag});
+module.exports.addTag = function addTag(tag, callback) {
+    let mTags = new tagDB({tag: tag});
     mTags.save(callback);
 }
 
@@ -242,7 +278,7 @@ function saveNodeInDB(itemBean) {
             mark: "",
             latestVersion: "",
             latestVersionUrl: "",
-            isInUse:true,
+            isInUse: true,
         };
         let dependenceBean = new dependenceDB(currentAppInfo)
         dependenceBean.save(function (err, data) {
