@@ -34,13 +34,19 @@ function generateDependenceBean(realDependence) {
     }
 }
 
-function compareWithDB(allDependence, itemBean) {
+/**
+ * 项目中单个的依赖和数据库所有在使用的依赖进行比较
+ * @param allDependence
+ * @param itemBean
+ */
+async function compareWithDB(allDependence, itemBean) {
     if (itemBean.moduleName.trim().length !== 0) {
-        //先精细化匹配
+        //先精细化匹配  精确到到那个module下的那个依赖 精确到版本号
         let dependenceEntity = allDependence.find(item => (item.dependenceName === itemBean.dependenceName) && (item.moduleName === itemBean.moduleName))
         if (dependenceEntity == null) {
+            //再模糊匹配  只看依赖名称 和所属lib 如果存在 则说明版本号变了  如果不存在 表示新增
             let {dependence} = generateDependenceBean(itemBean.dependenceName)
-            let dependenceEntity1 = allDependence.find(item => item.dependenceName.indexOf(dependence) != -1)
+            let dependenceEntity1 = allDependence.find(item => (item.dependenceName.indexOf(dependence) !== -1) && (item.moduleName === itemBean.moduleName))
             if (dependenceEntity1 != null) {
                 //版本号 发生变化
                 allDependence.splice(allDependence.indexOf(dependenceEntity1), 1)  //移除掉
@@ -49,7 +55,6 @@ function compareWithDB(allDependence, itemBean) {
                 dependenceDB.updateOne({"_id": dependenceEntity1._id}, {"dependenceName": itemBean.dependenceName}).then(result => console.log(result));
                 console.log("更新:" + JSON.stringify(itemBean));
             } else {
-                // 新增
                 pushService.pushVersionAdd(itemBean)
                 const currentAppInfo = {
                     dependenceName: itemBean.dependenceName,
@@ -74,6 +79,10 @@ function compareWithDB(allDependence, itemBean) {
                 });
             }
         } else {
+            if(!dependenceEntity.isInUse){//之前数据库没有被使用的 现在又有了  就是在使用
+                dependenceDB.updateOne({"_id": dependenceEntity._id}, {"isInUse": true}).then(result => console.log(result));
+                pushService.pushVersionAdd(itemBean)
+            }
             allDependence.splice(allDependence.indexOf(dependenceEntity), 1)  //移除掉
         }
     }
@@ -81,11 +90,12 @@ function compareWithDB(allDependence, itemBean) {
 
 /**
  * 一次性 从数据库 取出所有的依赖   然后 和 最新的比较
+ *
  */
 let allDependence = null;
 
 async function getDifferent(dependenceNode) {
-    allDependence = await dependenceDB.find({"isInUse": true}).lean();
+    allDependence = await dependenceDB.find().lean();
     bsDiff(allDependence, dependenceNode)
     if (allDependence.length > 0) {
         //有删除掉的
@@ -101,7 +111,6 @@ async function getDifferent(dependenceNode) {
 /**
  * 拿最新的依赖 去 数据库 查询有没有发生改动，如果改动 就修改数据。
  *用module名称去取依赖，如果存在且相等 则说明没有变化，如果存在但不相同，则说明版本发生了变化，如果不存在，则表示新增。
-
  */
 function bsDiff(allDependence, dependenceNode) {
     if (dependenceNode.subNodeList != null && dependenceNode.subNodeList.length > 0) {
@@ -175,7 +184,7 @@ function parseData(dependenceContent) {
 
 
 module.exports.modifyTag = async function modifyTag(dependence, tags) {
-    dependenceDB.updateOne({dependenceName: dependence}, {tag: tags}, function (err, raw) {
+    dependenceDB.update({dependenceName: dependence}, {tag: tags}, function (err, raw) {
         if (err) {
             console.log(err);
         } else {
