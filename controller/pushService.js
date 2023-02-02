@@ -21,7 +21,10 @@ module.exports = {
         pushMessage(title, content)
     },
     pushNewVersion: (artifact) => {
-        let {version} = dependenceUtils.getGroupIdAndArtifactId(artifact.dependenceName)
+        if (!artifact.isInUse) {//废弃版本不再推送 只进行更新
+            return
+        }
+        let {version} = dependenceUtils.getGroupIdAndArtifactId(artifact.dependenceName);
         if(version!==artifact.latestVersion){   //如果新版本 和  当前使用的版本号 相同 就没必要通知
             const title = "# 依赖发现新版本 \n"
             const content ="## "+ artifact.dependenceName + "\n 发现新版本,最新的版本号为: " + artifact.latestVersion+"\n  ######  [控制台](http://172.16.9.11:8092) \n";
