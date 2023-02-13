@@ -99,11 +99,13 @@ async function getDifferent(dependenceNode) {
     bsDiff(allDependence, dependenceNode)
     if (allDependence.length > 0) {
         //有删除掉的
-        console.log("有删除掉的：" + JSON.stringify(allDependence));
+        console.log("所有被删除掉的：" + JSON.stringify(allDependence));
         allDependence.forEach((item, index) => {
-            pushService.pushVersionDeleted(item)
-            // dependenceDB.findOneAndDelete({'_id': item._id}).then(result => console.log("删除成功"));
-            dependenceDB.updateOne({"_id": item._id}, {"isInUse": false}).then(result => console.log(result));
+            if (item.isInUse===true) {  //正在使用的进行修改   不再被使用的 不进行任何操作
+                pushService.pushVersionDeleted(item);
+                // dependenceDB.findOneAndDelete({'_id': item._id}).then(result => console.log("删除成功"));
+                dependenceDB.updateOne({"_id": item._id}, {"isInUse": false}).then(result => console.log(result));
+            }
         })
     }
 }
